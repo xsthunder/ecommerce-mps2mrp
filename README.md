@@ -63,6 +63,17 @@ e.g
 镜框	螺钉	采购	4	0.1	0	0	0	1	10
 ```
 
+### useful information
+
+```
+子物料的需求数量 = 
+（父物料需求数*子物料构成数）÷（1-损耗率）- 工序库存量 - 资材库存量 
+子物料的日程完成日期 = 父物料的日程下达日期
+子物料的日程下达日期 = 
+子物料的日程完成日期 - 子物料作业提前期 - 子物料配料提前期 - 子物料供应商提前期
+```
+
+
 ### output 
 
 print Material Resouring Plan(DONT combine two records, records that has early start day use stock first)
