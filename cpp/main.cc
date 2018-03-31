@@ -20,6 +20,8 @@ using namespace std;
 typedef map<string, int> Name2stock;
 void buildName2stock(FILE*, Name2stock&);
 void testBuildName2stock(Name2stock &);
+time_t toDateSecond(int y,int m,int d);
+void printTime(time_t);
 
 class DependTree{
 	private :
@@ -47,14 +49,26 @@ class DependTree{
 };
 class MpsNode{
 
-}
+};
+const string MPS_TITLE[] = { "调配方式","物料号","物料名称","需求数量	","日程下达日期	","日程完成日期	","备注" };
 class Mps{
-	string title[] = {
-
-	}
 	list<MpsNode*> table;
-
-}
+};
+class OrderNode{
+	public :
+	string name = "";
+	int quantity = 0;
+	int y = 0,m = 0, d = 0;
+	time_t dateSecond = 0;
+	void print();
+	void setDate(int ,int ,int);
+};
+class Order{
+	public :
+		list<OrderNode *>table;
+		void build(FILE *);
+		void testBuild();
+};
 
 int main(){
 	FILE * pmps = fopen("1mps.txt", "r");
@@ -64,6 +78,7 @@ int main(){
 	FILE * poutput = fopen("5output.txt", "w+");
 	assert( pmps && pbom && pstock && pconsist && poutput);
 
+#ifdef XS
 	Name2stock name2stock;
 	buildName2stock(pstock ,name2stock);
 	testBuildName2stock(name2stock);
@@ -71,15 +86,20 @@ int main(){
 	DependTree *dt = new DependTree();
 	dt->build(pconsist);
 	dt->testBuild();
+#endif
+
+	Order *order = new Order();
+	order->build(pmps);
+	order->testBuild();
 
 	//clean up
 	fclose(pmps); fclose(pbom); fclose(pstock); fclose(pconsist); fclose(poutput);
 	return 0;
 }
-static const int BUILD = 0;
-static const int BUY = 1;
-static const int WAY_TO_GET_COUNT = 2;
-static const char WAY_TO_GET[WAY_TO_GET_COUNT][10] { "生产","采购" };
+const int BUILD = 0;
+const int BUY = 1;
+const int WAY_TO_GET_COUNT = 2;
+const char WAY_TO_GET[WAY_TO_GET_COUNT][10] { "生产","采购" };
 const int charN = 100;
 void DependTree::build(FILE *p){
 	const int D = 10;
@@ -153,3 +173,38 @@ void testBuildName2stock(Name2stock &ns){
 	puts("^^^^ testBuildName2stock ");
 }
 
+void Order::build(FILE *p){
+	const int D = 3;char charname[20];
+	for(int i =0;i<D;i++)fscanf(p,"%s",charname);
+	int quantity,y,m,d;
+	while( EOF!= fscanf(p,"%s%d%d/%d/%d", charname, &quantity,&y,&m,&d )){
+		OrderNode *on =  new OrderNode();
+		on->quantity = quantity;
+		on->name = string(charname);
+		on->y = y, on-> m = m, on->d = d;
+		on->setDate(y,m,d);
+		this->table.push_back(on);
+	}
+}
+void OrderNode::setDate(int y,int m,int d){
+	this->y = y,this->m = m, this-> d = d;
+	time_t rawtime;
+	struct tm *timeinfo;
+	time( &rawtime );
+	timeinfo=localtime(&rawtime);
+	timeinfo->tm_year = y - 1900;
+	timeinfo->tm_mon = m - 1;
+	timeinfo->tm_mday = d;
+	mktime(timeinfo);
+	this->dateSecond = rawtime;
+}
+void OrderNode::print(){
+	printf("%s %d %d/%d/%d time_t %lu\n",
+			name.c_str(), quantity,
+			y,m,d,
+			dateSecond);
+}
+void Order::testBuild(){
+	printf("Order::testBuild() table.size %lu\n",this->table.size());
+	for(auto p:table)p->print();
+}
