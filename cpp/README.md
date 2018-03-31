@@ -8,23 +8,12 @@ use c with classes
 ### question
 // consist should need number.
 
+### pesudo code
 ```cpp
-class WAY_TO_GET{
-	static const int BUILD = 0;
-	static const int BUY = 1;
-	static const char WAYTOGET[2][] = {
-		"生产","采购"
-	}
-}
-//use name to identify
-////make map NAME -> number using BOM
-//typedef map<string, int> Name2number;
-//Name2number(FILE* bom){
-//	//this func depends map, string
-//	//name should not exceed 100 char
-//	map<int, string>name2number 
-//	char name[100];
-//}
+//use stock
+Name2stock name2stock;
+buildName2stock(pstock ,name2stock);
+//testBuildName2stock(name2stock);
 ```
 
 
@@ -54,13 +43,6 @@ class Mps{
 
 ```
 
-
-```cpp
-//build from stock
-typedef map<int , int> Number2stock;
-void buildNumber2stock(FILE *f,Number2stock &n2s){
-}
-```
 
 ```cpp
 // build tree from BOM(first) and consist

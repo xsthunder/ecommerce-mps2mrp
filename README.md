@@ -1,4 +1,4 @@
-﻿# Ecommerce to MRP
+# Ecommerce to MRP
 
 ## Description
 
@@ -88,8 +88,7 @@ print Material Resouring Plan(DONT combine two records, records that has early s
 ## output
 
 ```
-调配方式	物料号	物料名称	需求数量	日程下达	日程完成日期	备注
-				日期		
+调配方式	物料号	物料名称	需求数量	日程下达日期	日程完成日期	备注
 生产	20000	眼镜	100	2018/5/29	2018/5/30	
 采购	20109	螺钉	223	2018/5/18	2018/5/29	
 采购	20300	镜片	200	2018/5/8	2018/5/29	
@@ -98,4 +97,5 @@ print Material Resouring Plan(DONT combine two records, records that has early s
 采购	20120	镜腿	170	2018/5/16	2018/5/27	库存-30
 采购	20130	鼻托	200	2018/5/8	2018/5/27	
 采购	20109	螺钉	385	2018/5/16	2018/5/27	库存-60
+
 ```
