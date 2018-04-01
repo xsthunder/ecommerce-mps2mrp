@@ -1,67 +1,72 @@
 #include<cassert>
+#include<algorithm>
+#include<vector>
 #include<list>
 #include<cstdio>
 #include<string>
 #include<map>
 #include<ctime>
 #include<cstring>
-/**
-1mps.txt
-2bom.txt
-3stock.txt
-4consist.txt
-5output.txt
-ls.cc
-main.cpp
-README.md
-**/
 using namespace std;
-
-typedef map<string, int> Name2stock;
-void buildName2stock(FILE*, Name2stock&);
-void testBuildName2stock(Name2stock &);
-time_t toDateSecond(int y,int m,int d);
-void printTime(time_t);
-
-class DependTree{
-	private :
-		DependTree *father = NULL;
-		list< DependTree *> son;
-		int stock = 0;
-	public:
+typedef int ItemNo ;
+const int BUF_SIZE = 20;
+const int SECOND_PER_DAY = 60*60*24;
+void printTime(time_t t){
+	struct tm * timeinfo ;
+	timeinfo = localtime(&t);
+	printf(" %d/%d/%d ",timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+}
+void eatTitle(const int D,FILE *p){for(int i =0 ;i<D;i++)fscanf(p, "%*s");}
+/*
+ * ITEM 
+ */
+class ItemInfo{
+	public :
 		string name = "";
-		int wayToGet = 0;
-		int consistNumber = 0;//number to take to consist father using this part
+		ItemNo itemNo= 0;
+		string wayToGet = "";
+		int consistNumber = 0;//number to take to consist father using this part}
 		double failRate = 0;
-
-		//FIXME don't use following 2 attributes
 		int stockWork = 0;
 		int stockStoage = 0;
-
+		int stock = 0;
 		int dateEalierTobuild = 0;
 		int dateEalierToget = 0;
 		int dateEalierTosupplier = 0;
-		void build(FILE *p);
+};
+map<ItemNo,ItemInfo*> infoItems;
+ItemInfo *getItem(const int no){
+	if( !infoItems.count(no) )infoItems[no] =new ItemInfo();
+	return infoItems[no];
+}
+class Item{
+	private :
+		list<Item *> son;
+	public :
+		Item *father  = NULL;
+		ItemNo itemNo = 0;
+		void buildByConsist(FILE *);
+		void buildByStock(FILE *);
+		void buildByBOM(FILE *);
 		void testBuild();
 		void setWayToBuy(const string &);
-		DependTree *locate(const string &);
+		Item *locate(const int);
+		ItemNo getNo(const string&);
 		void print();
+		void addMpsNode(int, time_t);
 };
-class MpsNode{
-
-};
-const string MPS_TITLE[] = { "调配方式","物料号","物料名称","需求数量	","日程下达日期	","日程完成日期	","备注" };
-class Mps{
-	list<MpsNode*> table;
-};
+/*
+ * ORDER
+ */
 class OrderNode{
 	public :
-	string name = "";
-	int quantity = 0;
-	int y = 0,m = 0, d = 0;
-	time_t dateSecond = 0;
-	void print();
-	void setDate(int ,int ,int);
+		typedef unsigned long ul;
+		ItemNo itemNo  = 0;
+		int quantity = 0;
+		int y = 0,m = 0, d = 0;
+		time_t dateSecond = 0;
+		void print();
+		void setDate(int ,int ,int);
 };
 class Order{
 	public :
@@ -69,110 +74,33 @@ class Order{
 		void build(FILE *);
 		void testBuild();
 };
-
-int main(){
-	FILE * pmps = fopen("1mps.txt", "r");
-	FILE * pbom = fopen("2bom.txt", "r");
-	FILE * pstock = fopen("3stock.txt", "r");
-	FILE * pconsist = fopen("4consist.txt", "r");
-	FILE * poutput = fopen("5output.txt", "w+");
-	assert( pmps && pbom && pstock && pconsist && poutput);
-
-#ifdef XS
-	Name2stock name2stock;
-	buildName2stock(pstock ,name2stock);
-	testBuildName2stock(name2stock);
-
-	DependTree *dt = new DependTree();
-	dt->build(pconsist);
-	dt->testBuild();
-#endif
-
-	Order *order = new Order();
-	order->build(pmps);
-	order->testBuild();
-
-	//clean up
-	fclose(pmps); fclose(pbom); fclose(pstock); fclose(pconsist); fclose(poutput);
-	return 0;
-}
-const int BUILD = 0;
-const int BUY = 1;
-const int WAY_TO_GET_COUNT = 2;
-const char WAY_TO_GET[WAY_TO_GET_COUNT][10] { "生产","采购" };
-const int charN = 100;
-void DependTree::build(FILE *p){
-	const int D = 10;
-	char charname[20],chartmp[20], charwayToGet[20];
-	if( NULL== this->father){
-		for(int i = 0;i<D;i++)assert(1 == fscanf(p, "%s", chartmp));//skip title
-	}
-	assert( 9 == fscanf(p,"%s%s%d%lf%d%d%d%d%d", charname, charwayToGet,&this->consistNumber, &this->failRate,
-			&this->stockWork, &this->stockStoage, &this->dateEalierTobuild, 
-			&this->dateEalierToget, &this->dateEalierTosupplier) || 1);
-	this->name = string(charname);
-	this->setWayToBuy(charwayToGet);
-	if( NULL == this->father){
-		while( EOF != fscanf(p, "%s", charname) ){
-			string nextFatherName(charname);
-			DependTree * father = this->locate( nextFatherName );
-			assert(father);
-			DependTree *pson = new DependTree();
-			pson->father = father;
-			pson->build(p);
-			(this->son).push_back( pson );
-		}
-	}
-}
-void DependTree::testBuild(){
-	this->print();
-	for(auto p:son){
-		p->testBuild();
-	}
-}
-void DependTree::print(){
-	printf("fatherName %s name %s %s %d %lf %d %d %d %d %d",this->father?this->father->name.c_str():"NULL", name.c_str(), WAY_TO_GET[wayToGet],this->consistNumber, this->failRate,
-			this->stockWork, this->stockStoage, this->dateEalierTobuild, 
-			this->dateEalierToget, this->dateEalierTosupplier) ;
-	puts("");
-}
-void DependTree::setWayToBuy(const string &tmp){
-	for(int i =0 ;i< WAY_TO_GET_COUNT ;i++){
-		//FIX ME use binary search to speed up
-		if( tmp == WAY_TO_GET[i] ){
-			this->wayToGet = i;
-			return ;
-		}
-	}
-	puts(tmp.c_str());
-	assert(0);
-}
-DependTree* DependTree::locate( const string &nxtf ){
-	if( this->name == nxtf )return this;
-	DependTree *ans = NULL;
-	for( auto dt : son){ if((ans = dt->locate(nxtf)))return ans; }
-	return NULL;
-}
-
-void buildName2stock(FILE *p, Name2stock & name2stock ){
-	char chartmp[charN];
-	const int D = 4;
-	for(int i =0 ;i<D;i++){ assert( 1 == fscanf(p,"%s", chartmp)); }
-	int a,sa,sb;
-	while( EOF != fscanf(p,"%d%s%d%d",&a,chartmp, &sa,&sb)){
-		string s(chartmp);
-		name2stock[s] = sa  + sb;
-	}
-}
-void testBuildName2stock(Name2stock &ns){
-	puts("testBuildName2stock vvv");
-	printf("name2stock size is %lu\n",ns.size());
-	for(auto p:ns){
-		printf("%s %d\n",p.first.c_str(), p.second);
-	}
-	puts("^^^^ testBuildName2stock ");
-}
-
+/*
+ * MPS
+ */
+class MpsNode{
+	public :
+		ItemNo itemNo = 0;
+		int quantity = 0;
+		time_t dateSecondBegin;
+		time_t dateSecondEnd;
+		int useStockQuantity = 0;
+		void printDebug();
+		void print();
+};
+class Mps{
+	public :
+		string MPS_TITLE[7] = { "调配方式","物料号","物料名称","需求数量","日程下达日期	","日程完成日期	","备注" };
+		void print();
+		void build();
+		void useStock();
+		list<MpsNode*> table;
+};
+Item *items = new Item();
+Order * order = new Order();
+Mps *mps = new Mps();
+/*
+ * ORDER function
+ */
 void Order::build(FILE *p){
 	const int D = 3;char charname[20];
 	for(int i =0;i<D;i++)fscanf(p,"%s",charname);
@@ -180,7 +108,7 @@ void Order::build(FILE *p){
 	while( EOF!= fscanf(p,"%s%d%d/%d/%d", charname, &quantity,&y,&m,&d )){
 		OrderNode *on =  new OrderNode();
 		on->quantity = quantity;
-		on->name = string(charname);
+		on->itemNo = items->getNo(string(charname));
 		on->y = y, on-> m = m, on->d = d;
 		on->setDate(y,m,d);
 		this->table.push_back(on);
@@ -188,23 +116,188 @@ void Order::build(FILE *p){
 }
 void OrderNode::setDate(int y,int m,int d){
 	this->y = y,this->m = m, this-> d = d;
-	time_t rawtime;
 	struct tm *timeinfo;
-	time( &rawtime );
-	timeinfo=localtime(&rawtime);
+	time_t t;
+	time( &t);
+	timeinfo=localtime(&t);
 	timeinfo->tm_year = y - 1900;
 	timeinfo->tm_mon = m - 1;
 	timeinfo->tm_mday = d;
-	mktime(timeinfo);
-	this->dateSecond = rawtime;
+	this->dateSecond = mktime(timeinfo);
 }
 void OrderNode::print(){
-	printf("%s %d %d/%d/%d time_t %lu\n",
-			name.c_str(), quantity,
+	struct tm * timeinfo;
+	timeinfo = localtime(&dateSecond);
+	printf("%s %d %d/%d/%d time_t %lu %s",
+			getItem(this->itemNo)->name.c_str(), quantity,
 			y,m,d,
-			dateSecond);
+			dateSecond , asctime(timeinfo));
 }
 void Order::testBuild(){
 	printf("Order::testBuild() table.size %lu\n",this->table.size());
 	for(auto p:table)p->print();
+}
+/*
+ * ITEM function
+ */
+void Item::buildByConsist(FILE * p){
+	eatTitle(9,p);
+	char fatherName[BUF_SIZE], name[BUF_SIZE];
+	ItemNo fatherNo, itemNo;
+	int consistNumber, dateEalierToget, dateEalierTosupplier;
+	while(EOF !=  fscanf(p,"%*d%*s%d%s%d%s%d%d%d",
+				&fatherNo, fatherName, &itemNo, name, &consistNumber, &dateEalierToget, &dateEalierTosupplier ) ){
+		Item *tar = this->locate(fatherNo);
+		ItemInfo *tmpInfo= getItem(itemNo);
+		tmpInfo->name = string(name);
+		tmpInfo->consistNumber = consistNumber;
+		tmpInfo->dateEalierToget = dateEalierToget;
+		tmpInfo->dateEalierTosupplier = dateEalierTosupplier;
+		Item *tmp = new Item();
+		tmp->itemNo = tmpInfo->itemNo = itemNo;
+		if(!tar){
+			ItemInfo *fa = getItem(fatherNo);
+			fa->name = string(fatherName);
+			fa->consistNumber = 1;
+			fa->itemNo = fatherNo;
+			this->itemNo = fatherNo;
+			tar = this;
+		}
+		tar->son.push_back( tmp);
+		tmp->father = tar;
+	}
+}
+void Item::buildByStock(FILE *p){
+	eatTitle(4, p);int a,sa,sb;
+	while( EOF != fscanf(p,"%d%*s%d%d",&a, &sa,&sb)){
+		ItemInfo * now = getItem(a);
+		now->stockWork = sa;
+		now->stockStoage = sb;
+		now->stock = sa + sb;
+	}
+}
+void Item::buildByBOM(FILE *p){
+	eatTitle(6,p);int itemNo,dateEalierTobuild;
+	char cwayToGet[BUF_SIZE];
+	double failRate;
+	while( EOF != fscanf(p, "%d%*s%*s%s%lf%d", &itemNo, cwayToGet, &failRate, &dateEalierTobuild ) ){
+		ItemInfo * tmp = getItem(itemNo);
+		tmp->wayToGet = string(cwayToGet);
+		tmp->failRate = failRate;
+		tmp->dateEalierTobuild = dateEalierTobuild; 
+	}
+}
+Item * Item::locate(const int no){
+	if( this->itemNo== no)return this;
+	Item * ans;
+	for(auto p:son){
+		if( (ans = p->locate(no)) ) return ans;
+	}
+	return NULL;
+}
+ItemNo Item::getNo(const string &s){
+	if( getItem(this->itemNo)->name== s)return this->itemNo;
+	ItemNo  ans;
+	for(auto p:son){
+		if( (ans = p->getNo(s)) ) return ans;
+	}
+	return 0;
+}
+void Item::testBuild(){
+	this->print();
+	for(auto p:this->son)p->testBuild();
+}
+void Item::print(){
+	ItemInfo * tmp = getItem(this->itemNo);
+	//printf("%d ",this->father?this->father->itemNo:-1);
+	printf("%s ",this->father?getItem(this->father->itemNo)->name.c_str():"NULL" );
+	//printf("%d ",tmp->itemNo);
+	printf("%s ",tmp->name.c_str() );
+	printf("%s ",tmp->wayToGet.c_str() );
+	printf("%d ",tmp->consistNumber);
+	printf("%lf ",tmp->failRate);
+	printf("%d ",tmp->stockWork);
+	printf("%d ",tmp->stockStoage);
+	printf("%d ",tmp->dateEalierTobuild);
+	printf("%d ",tmp->dateEalierToget);
+	printf("%d ",tmp->dateEalierTosupplier);
+	putchar('\n');
+}
+void Item::addMpsNode(int quantity, time_t end){
+	MpsNode *mn = new MpsNode();
+	mn->itemNo = this->itemNo;
+	mn->quantity = quantity;
+	mn->dateSecondEnd = end;
+	ItemInfo * itemInfo = getItem(this->itemNo);
+	int day = (itemInfo ->dateEalierTobuild + itemInfo->dateEalierToget + itemInfo->dateEalierTosupplier);
+	time_t begin = end - day*SECOND_PER_DAY;
+	mn->dateSecondBegin = begin;
+	mps->table.push_back(mn);
+	for(auto x: son){
+		ItemInfo *nxti = getItem(x->itemNo);
+		int nxtq = nxti->consistNumber*quantity;
+		nxtq = 0.5 + nxtq / (1.0 - nxti->failRate);
+		x->addMpsNode(nxtq, begin);
+	}
+}
+/*MPS function
+ */
+void Mps::print(){
+	for(auto x:this->table)x->print();
+	for(auto x:this->table)x->printDebug();
+}
+void MpsNode::printDebug(){
+	ItemInfo * itemInfo= getItem(this->itemNo);
+	printf("%d %s",itemInfo->itemNo, itemInfo->name.c_str());
+	printf(" %d ",this->quantity);
+	printTime( this->dateSecondBegin);
+	printTime( this->dateSecondEnd);
+	putchar('\n');
+}
+void MpsNode::print(){
+}
+void Mps::build(){
+	for(auto on: order->table){
+		Item* now ;
+		assert(  (now = items->locate( on->itemNo)));
+		now->addMpsNode( on->quantity , on->dateSecond);
+	}
+}
+void Mps::useStock(){
+	typedef  pair<time_t, MpsNode* > P;
+	vector< P> v;
+	for(auto x :this->table){
+		v.push_back(P( x->dateSecondBegin, x));
+	}
+	sort( v.begin() ,v.end() );
+	for(auto p : v){
+		MpsNode*mn = p.second;
+		ItemInfo * ii = getItem(mn->itemNo);
+		if( !ii->stock ) continue;
+		int a = min( mn->quantity, ii->stock );
+		mn->quantity -= a;
+		ii->stock -= a;
+
+	}
+}
+
+int main(){
+	FILE * pmps = fopen("1mps.txt", "r");
+	FILE * pbom = fopen("2bom.txt", "r");
+	FILE * pstock = fopen("3stock.txt", "r");              
+	FILE * pconsist = fopen("4consist.txt", "r");
+	FILE * poutput = fopen("5output.txt", "w+");
+	assert( pmps && pbom && pstock && pconsist && poutput);
+	items->buildByConsist(pconsist);
+	items->buildByStock(pstock);
+	items->buildByBOM(pbom);
+	items->testBuild();
+
+	order->build(pmps);
+	order->testBuild();
+
+	mps->build();
+	mps->useStock();
+	mps->print();
+	return 0;
 }
