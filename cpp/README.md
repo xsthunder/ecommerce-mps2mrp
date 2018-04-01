@@ -3,6 +3,7 @@
 use c with classes
 
 ## class
+```cpp
 /*
  * ITEM 
  */
