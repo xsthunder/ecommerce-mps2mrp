@@ -14,7 +14,7 @@ const int SECOND_PER_DAY = 60*60*24;
 void printTime(time_t t){
 	struct tm * timeinfo ;
 	timeinfo = localtime(&t);
-	printf(" %d/%d/%d ",timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+	printf("%d/%d/%d",timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
 }
 void eatTitle(const int D,FILE *p){for(int i =0 ;i<D;i++)fscanf(p, "%*s");}
 /*
@@ -81,15 +81,15 @@ class MpsNode{
 	public :
 		ItemNo itemNo = 0;
 		int quantity = 0;
-		time_t dateSecondBegin;
-		time_t dateSecondEnd;
+		time_t dateSecondBegin = 0;
+		time_t dateSecondEnd = 0;
 		int useStockQuantity = 0;
-		void printDebug();
 		void print();
 };
+const int MPS_TITLE_COUNT = 7;
 class Mps{
 	public :
-		string MPS_TITLE[7] = { "调配方式","物料号","物料名称","需求数量","日程下达日期	","日程完成日期	","备注" };
+		string MPS_TITLE[MPS_TITLE_COUNT] = {"调配方式","物料号","物料名称","需求数量","日程下达日期","日程完成日期","使用库存" };
 		void print();
 		void build();
 		void useStock();
@@ -243,18 +243,23 @@ void Item::addMpsNode(int quantity, time_t end){
 /*MPS function
  */
 void Mps::print(){
-	for(auto x:this->table)x->print();
-	for(auto x:this->table)x->printDebug();
-}
-void MpsNode::printDebug(){
-	ItemInfo * itemInfo= getItem(this->itemNo);
-	printf("%d %s",itemInfo->itemNo, itemInfo->name.c_str());
-	printf(" %d ",this->quantity);
-	printTime( this->dateSecondBegin);
-	printTime( this->dateSecondEnd);
+	for(int i = 0;i<MPS_TITLE_COUNT;i++){
+		if(i)putchar('\t');
+		printf("%s", MPS_TITLE[i].c_str());
+	}
 	putchar('\n');
+	for(auto x:this->table)x->print();
 }
 void MpsNode::print(){
+	ItemInfo * itemInfo= getItem(this->itemNo);
+	printf("%s\t\t",itemInfo->wayToGet.c_str());
+	printf("%d\t%s\t\t",itemInfo->itemNo, itemInfo->name.c_str());
+	printf("%d\t\t",this->quantity);
+	printTime( this->dateSecondBegin);
+	putchar('\t');
+	printTime( this->dateSecondEnd);
+	printf("\t%d" ,this->useStockQuantity);
+	putchar('\n');
 }
 void Mps::build(){
 	for(auto on: order->table){
@@ -277,12 +282,12 @@ void Mps::useStock(){
 		int a = min( mn->quantity, ii->stock );
 		mn->quantity -= a;
 		ii->stock -= a;
-
+		mn->useStockQuantity = a;
 	}
 }
 
 int main(){
-	FILE * pmps = fopen("1mps.txt", "r");
+	FILE * pmps = fopen("3mps.txt", "r");
 	FILE * pbom = fopen("2bom.txt", "r");
 	FILE * pstock = fopen("3stock.txt", "r");              
 	FILE * pconsist = fopen("4consist.txt", "r");
@@ -291,10 +296,10 @@ int main(){
 	items->buildByConsist(pconsist);
 	items->buildByStock(pstock);
 	items->buildByBOM(pbom);
-	items->testBuild();
+	//items->testBuild();
 
 	order->build(pmps);
-	order->testBuild();
+	//order->testBuild();
 
 	mps->build();
 	mps->useStock();
