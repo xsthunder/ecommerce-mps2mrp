@@ -1,0 +1,13 @@
+<md-content layout-fill layout-padding>
+
+    <div ng-repeat="s in inputField">
+        <md-input-container class="md-block">
+            <label>{{s}}</label>
+            <textarea ng-model="input[s]"  rows="5" ></textarea>
+        </md-input-container>
+        <md-content layout-align="center center" layout="row">
+            <md-button class="md-raised" ng-click="post(s,input[s])">save {{s}}</md-button>
+        </md-content>
+        <md-divider></md-divider>
+    </div>
+</md-content>

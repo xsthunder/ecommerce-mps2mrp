@@ -94,6 +94,8 @@ class Mps{
 		void build();
 		void useStock();
 		list<MpsNode*> table;
+		typedef pair<time_t, MpsNode* > P;
+		vector< P> v;
 };
 Item *items = new Item();
 Order * order = new Order();
@@ -248,13 +250,13 @@ void Mps::print(){
 		printf("%s", MPS_TITLE[i].c_str());
 	}
 	putchar('\n');
-	for(auto x:this->table)x->print();
+	for(auto x:this->v)x.second->print();
 }
 void MpsNode::print(){
 	ItemInfo * itemInfo= getItem(this->itemNo);
-	printf("%s\t\t",itemInfo->wayToGet.c_str());
-	printf("%d\t%s\t\t",itemInfo->itemNo, itemInfo->name.c_str());
-	printf("%d\t\t",this->quantity);
+	printf("%s\t",itemInfo->wayToGet.c_str());
+	printf("%d\t%s\t",itemInfo->itemNo, itemInfo->name.c_str());
+	printf("%d\t",this->quantity);
 	printTime( this->dateSecondBegin);
 	putchar('\t');
 	printTime( this->dateSecondEnd);
@@ -269,8 +271,6 @@ void Mps::build(){
 	}
 }
 void Mps::useStock(){
-	typedef  pair<time_t, MpsNode* > P;
-	vector< P> v;
 	for(auto x :this->table){
 		v.push_back(P( x->dateSecondBegin, x));
 	}
@@ -287,12 +287,20 @@ void Mps::useStock(){
 }
 
 int main(){
-	FILE * pmps = fopen("3mps.txt", "r");
+#ifdef XS
+	FILE * pmps = fopen("1mps.txt", "r");
 	FILE * pbom = fopen("2bom.txt", "r");
 	FILE * pstock = fopen("3stock.txt", "r");              
 	FILE * pconsist = fopen("4consist.txt", "r");
-	FILE * poutput = fopen("5output.txt", "w+");
-	assert( pmps && pbom && pstock && pconsist && poutput);
+//	freopen("5output.txt","w",stdout);
+#else
+	FILE * pmps = fopen("../ws/1mps.txt", "r");
+	FILE * pbom = fopen("../ws/2bom.txt", "r");
+	FILE * pstock = fopen("../ws/3stock.txt", "r");              
+	FILE * pconsist = fopen("../ws/4consist.txt", "r");
+	freopen("../ws/5output.txt","w",stdout);
+#endif
+	assert( pmps && pbom && pstock && pconsist );
 	items->buildByConsist(pconsist);
 	items->buildByStock(pstock);
 	items->buildByBOM(pbom);
@@ -300,7 +308,6 @@ int main(){
 
 	order->build(pmps);
 	//order->testBuild();
-
 	mps->build();
 	mps->useStock();
 	mps->print();
