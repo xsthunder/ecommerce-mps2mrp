@@ -1,5 +1,9 @@
 # Ecommerce to MRP
 
+## bugs
+
+* when with 眼镜 stock, it goes wrong
+
 ## Description
 
 ### input the following

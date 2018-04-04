@@ -5,13 +5,20 @@
 "use strict";
 (function () {
     //fix this, add util
-    var enableLocalServer = true;
+    var enableLocalServer = false;
     var enableHttps = false;
-
     var serverPort =20184;
-    var server='l.lovecust.com';
+    var server='';
+
     if(enableLocalServer){
         server = 'localhost';
+    }
+    if(!server){
+        server = location.host;
+        var index =server.indexOf(':');
+        if( index >= 0){
+            server = server.substr(0,index);
+        }
     }
     var tmp = {
         enableHttps:enableHttps,

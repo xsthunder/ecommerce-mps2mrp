@@ -25,8 +25,10 @@
             </md-content>
         </md-content>
     </md-sidenav>
-    <md-content layout-fill layout="column">
+    <md-content flex layout="column" style="overflow-y: hidden!important;overflow-x: hidden!important">
         <xx-toolbar></xx-toolbar>
-        <ui-view layout-fill></ui-view>
+        <!--<ui-view flex style="overflow-y: hidden!important;overflow-x: hidden!important"></ui-view>-->
+        <ui-view flex ></ui-view>
+
     </md-content>
 </md-content>
