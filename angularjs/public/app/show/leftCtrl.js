@@ -21,6 +21,9 @@
                 {
                     name:'show.output',
                     alias:'Output'
+                },{
+                    name:'show.view',
+                    alias:'View'
                 }
             ];
             $scope.personInfo = function () {

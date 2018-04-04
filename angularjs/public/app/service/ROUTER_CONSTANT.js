@@ -10,8 +10,13 @@
             component: 'xxHome'
         },{
             name:'show.output',
-            url:'output',
+            url:'/output',
             component:'xxOutput'
+        },{
+            name:'show.view',
+            url:'/view',
+            component:'xxView'
+
         },
         {
             name: "otherwise",

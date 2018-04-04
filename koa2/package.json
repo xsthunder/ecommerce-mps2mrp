@@ -1,0 +1,24 @@
+{
+  "name": "ecommerce-mps2mprp-back-end",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xsthunder/ecommerce-mps2mrp.git"
+  },
+  "author": "xsthunder",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/xsthunder/ecommerce-mps2mrp/issues"
+  },
+  "homepage": "https://github.com/xsthunder/ecommerce-mps2mrp#readme",
+    "dependencies": {
+    "koa": "^2.4.1",
+    "koa-body": "^2.5.0",
+    "koa-router": "^7.3.0"
+  }
+}

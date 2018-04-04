@@ -1,0 +1,12 @@
+<md-content layout-fill layout-padding>
+    <div ng-repeat="s in inputField">
+        <h2>{{s}}</h2>
+        <table border="1">
+            <tr ng-repeat="r in input[s].split('\n') track by $index">
+                <td ng-if="r.length>=1" ng-repeat="c in r.split('\t') track by $index">
+                   {{c}}
+                </td>
+            </tr>
+        </table>
+    </div>
+</md-content>
